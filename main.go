@@ -1,23 +1,17 @@
 package main
 
 import (
-	"net"
-)
-
-const (
-	serverName = "gxmppd.org"
+	"os/signal"
 )
 
 func main() {
-	l, e := net.Listen("tcp", "0.0.0.0:5222")
-	if e != nil { panic(e) }
+	go RunC2S()
+	go RunS2S()
 
 	for {
-		c, e := l.Accept()
-		// TODO just report about error
-		if e != nil { panic(e) }
-
-		go newConn(c).run()
+		switch (<-signal.Incoming).(signal.UnixSignal) {
+		case signal.SIGINT:
+			return
+		}
 	}
 }
-

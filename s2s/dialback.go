@@ -1,12 +1,10 @@
-package s2s
+package main
 
 import (
 	"hash"
 	"crypto/sha256"
 	"crypto/hmac"
 	"fmt"
-
-	"g/xmppd/base"
 )
 
 const dialbackSecret = "secret"
@@ -25,12 +23,12 @@ func dialbackKey(from, to, id string) string {
 	return fmt.Sprintf("%x", hash.Sum())
 }
 
-func (s *Stream) dialback() {
-	key := dialbackKey(base.ServerName, s.streamTo, s.streamId)
+func (c *S2SConn) dialback() {
+	key := dialbackKey(serverName, c.streamTo, c.streamId)
 
-	s.Element("db:result", "from", base.ServerName, "to", s.streamTo, key).End()
+	c.Element("db:result", "from", serverName, "to", c.streamTo, key).End()
 
-	cursor := s.ReadElement().Cursor()
+	cursor := c.ReadElement().Cursor()
 	// should be db:result
 
 	resultType := cursor.MustAttr("type")
@@ -38,26 +36,26 @@ func (s *Stream) dialback() {
 		println("ok")
 	}
 
-	s.Element("presence", "from", "pavel@gxmppd.dyndns.org", "to", "pavel.rosputko@gmail.com",
+	c.Element("presence", "from", "pavel@gxmppd.dyndns.org", "to", "pavel.rosputko@gmail.com",
 		"type", "subscribe").End()
 
-	s.ReadElement()
+	c.ReadElement()
 }
 
-func (s *Stream) dialbackAccept() {
+func (c *S2SConn) dialbackAccept() {
 	// should be db result
-	cursor := s.ReadElement().Cursor()
+	cursor := c.ReadElement().Cursor()
 
 	from := cursor.MustAttr("from")
 	to := cursor.MustAttr("to")
 
 	// TODO verify @to, check hash
 	if true {
-		s.Element("db:result", "from", to, "to", from, "type", "valid").End()
+		c.Element("db:result", "from", to, "to", from, "type", "valid").End()
 	}
 
 	// should be db verify
-	cursor = s.ReadElement().Cursor()
+	cursor = c.ReadElement().Cursor()
 
 	from = cursor.MustAttr("from")
 	to = cursor.MustAttr("to")
@@ -72,5 +70,5 @@ func (s *Stream) dialbackAccept() {
 		verifyType = "invalid"
 	}
 
-	s.Element("db:verify", "from", to, "id", id, "to", from, "type", verifyType).End()
+	c.Element("db:verify", "from", to, "id", id, "to", from, "type", verifyType).End()
 }
