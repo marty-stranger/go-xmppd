@@ -4,7 +4,7 @@ import (
 	"net"
 )
 
-func RunC2S() {
+func runC2S() {
 	l, e := net.Listen("tcp", "0.0.0.0:5222")
 	if e != nil { panic(e) }
 

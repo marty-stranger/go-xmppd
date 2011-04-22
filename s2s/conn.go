@@ -1,12 +1,11 @@
 package main
 
 import (
-	"crypto/rand"
 	"fmt"
 	"net"
 )
 
-func RunS2S() {
+func runS2S() {
 	l, e := net.Listen("tcp", "0.0.0.0:5269")
 	if e != nil { panic(e) }
 
@@ -31,69 +30,68 @@ func address(domain string) string {
 	return fmt.Sprint(addr.Target, ":", addr.Port)
 }
 
+type FromTo struct { From, To string }
+
 type S2SConn struct {
 	*Conn
 
 	streamTo	string
 	streamId	string
+	pending		[]*Stanza
+	// verified	map[FromTo]bool
+	verified	bool
 }
 
-func ConnectS2S(to string) {
-	addr := address(to)
+func newS2SConn(to string) *S2SConn {
+	return &S2SConn{
+		streamTo: to}
+//		verified: make(map[FromTo]bool)}
+}
+
+func (c *S2SConn) connect() {
+	addr := address(c.streamTo)
 
 	conn, err := net.Dial("tcp", "", addr)
-	if err != nil { panic(err) }
+	if err != nil { panic(err) } // TODO handle error
 
-	s2sConn := &S2SConn{
-		Conn: newConn(conn),
-		streamTo: to}
-	s2sConn.connect()
-}
+	c.Conn = newConn(conn)
 
-func (s *S2SConn) connect() {
 	// NOTE xmlns:db is required for gmail.com, invalid-namespace otherwise
 	version := "1.0"
-	s.StartElement("stream:stream",
+	c.StartElement("stream:stream",
 			"from", serverName,
-			"to", s.streamTo,
+			"to", c.streamTo,
 			"version", version,
 			"xmlns", "jabber:server",
 			"xmlns:stream", streamNs,
 			"xmlns:db", "jabber:server:dialback").
 		Send()
 
-	cursor := s.ReadStartElement().Cursor()
+	cursor := c.ReadStartElement().Cursor()
 
-	s.streamId = cursor.MustAttr("id")
+	c.streamId = cursor.MustAttr("id")
 
 	version, _ = cursor.Attr("version")
 	if version == "" {
-		s.dialback()
+		c.dialback()
 	}
 
 }
 
-func (s *S2SConn) accept() {
-	cursor := s.ReadStartElement().Cursor()
+func (c *S2SConn) sendStanza(stanza *Stanza) {
+	if c.verified {
+		c.StartElement(stanza.Name, "from", stanza.From.Full, "id", stanza.Id,
+				"to", stanza.To.Full, "type", stanza.Type).
+			Raw(stanza.Fragment.String()).
+			End()
+	} else {
+		c.pending = append(c.pending, stanza)
+	}
+}
 
-	from, _ := cursor.Attr("from")
-	version, _ := cursor.Attr("version")
-	dialback, _ := cursor.Attr("xmlns:db")
-
-	bytes := make([]byte, 16)
-	rand.Read(bytes)
-
-	id := fmt.Sprintf("%x", bytes)
-
-	s.StartElement("stream:stream",
-			"from", serverName,
-			"id", id,
-			"to", from,
-			"version", version,
-			"xmlns", "jabber:server",
-			"xmlns:stream", streamNs,
-			"xmlns:db", dialback).
-		Send()
-
-	s.dialbackAccept()
+func (c *S2SConn) sendPending() {
+	for _, stanza := range c.pending {
+		c.sendStanza(stanza)
+	}
+	c.pending = nil
 }

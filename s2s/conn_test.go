@@ -1,4 +1,4 @@
-package s2s
+package main
 
 import "net"
 import "fmt"
@@ -14,6 +14,6 @@ func _Test(t *testing.T) {
 }
 
 func Test(t *testing.T) {
-	go Run()
-	Connect("gmail.com")
+	go runS2S()
+	connectS2S("bot.talk.google.com")
 }

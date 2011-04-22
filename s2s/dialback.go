@@ -36,10 +36,13 @@ func (c *S2SConn) dialback() {
 		println("ok")
 	}
 
-	c.Element("presence", "from", "pavel@gxmppd.dyndns.org", "to", "pavel.rosputko@gmail.com",
+	/* c.Element("presence", "from", "pavel@gxmppd.dyndns.org", "to", "pavel.rosputko@gmail.com",
 		"type", "subscribe").End()
 
-	c.ReadElement()
+	c.ReadElement() */
+
+	c.verified = true
+	c.sendPending()
 }
 
 func (c *S2SConn) dialbackAccept() {

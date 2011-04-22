@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/base64"
 	"strings"
+
+	"g/xml"
 )
 
 const saslNs = "urn:ietf:params:xml:ns:xmpp-sasl"
@@ -26,11 +28,11 @@ func decode64(s string) string {
 	return string(decoded)
 }
 
-func (c *C2SConn) sasl() string {
-	mech := c.MustAttr("mechanism")
+func (c *C2SConn) sasl(cursor *xml.Cursor) string {
+	mech := cursor.MustAttr("mechanism")
 	if mech != "PLAIN" { c.saslError("invalid-mechanism") }
 
-	auth := strings.Split(decode64(c.MustChars()), "\x00", -1)
+	auth := strings.Split(decode64(cursor.MustChars()), "\x00", -1)
 	_, authcid, password := auth[0], auth[1], auth[2] // _ -> authzid
 
 	username := authcid // TODO nodeprep

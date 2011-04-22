@@ -5,8 +5,8 @@ import (
 )
 
 func main() {
-	go RunC2S()
-	go RunS2S()
+	go runC2S()
+	go runS2S()
 
 	for {
 		switch (<-signal.Incoming).(signal.UnixSignal) {

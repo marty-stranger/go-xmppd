@@ -1,13 +1,7 @@
 package main
 
-import (
-	"g/xml"
-)
-
 type C2SConn struct {
 	*Conn
-
-	*xml.Cursor
 
 	jid	Jid
 
@@ -24,19 +18,10 @@ func (c *C2SConn) stream() {
 	version := cursor.MustAttr("version")
 	if version != "1.0" { version = "" }
 
-//	c.StartDocument().
-	println("stream")
-	c.StartElement("stream:stream", "from", serverName, "version", version,
+	c.StartDocument().
+		StartElement("stream:stream", "from", serverName, "version", version,
 			"xmlns", "jabber:client", "xmlns:stream", streamNs).
 		Send()
-}
-
-/* func (c *Conn) stanza() {
-	// c.Stanza = Stanza{c.ReadElement().Cursor()}
-} */
-
-func (c *C2SConn) readElement() {
-	c.Cursor = c.ReadElement().Cursor()
 }
 
 func (c *C2SConn) run() {
@@ -47,9 +32,9 @@ func (c *C2SConn) run() {
 		Element("starttls", "xmlns", "urn:ietf:params:xml:ns:xmpp-tls").
 		End()
 
-	c.readElement()
+	cursor := c.ReadElement().Cursor()
 
-	c.tls()
+	c.tls(cursor)
 
 	c.stream()
 	c.StartElement("stream:features").
@@ -57,9 +42,9 @@ func (c *C2SConn) run() {
 			Element("mechanism", "PLAIN").
 		End()
 
-	c.readElement()
+	cursor = c.ReadElement().Cursor()
 
-	local := c.sasl()
+	local := c.sasl(cursor)
 	c.stream()
 
 	c.StartElement("stream:features").
@@ -67,17 +52,29 @@ func (c *C2SConn) run() {
 //		Element("session", "xmlns", "urn:ietf:params:xml:ns:xmpp-session").
 		End()
 
-	c.readElement()
-
-	c.bind(local)
+	cursor = c.ReadElement().Cursor()
+	c.bind(local, cursor)
 
 	for {
-		// c.stanza()
-		c.readElement()
-		switch c.Name() {
-		case "iq": c.iq()
-		case "presence": c.presence()
-		// case "message": c.message()
+		stanza := newStanza(c.ReadElement())
+
+		packet := &Packet{}
+		packet.Src = c.jid
+
+		if stanza.To.Full != "" {
+			packet.Dest = stanza.To
+		} else {
+			packet.Dest = c.jid.BareJid()
 		}
+		packet.Stanza = stanza
+
+		router.ch <- packet
 	}
+}
+
+func (c *C2SConn) writeStanza(stanza *Stanza) {
+	c.StartElement(stanza.Name, "from", stanza.From.Full, "id", stanza.Id,
+		"to", stanza.To.Full, "type", stanza.Type).
+		Raw(stanza.Fragment.String()).
+		End()
 }
