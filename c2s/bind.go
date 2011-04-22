@@ -6,7 +6,7 @@ import (
 
 const bindNs = "urn:ietf:params:xml:ns:xmpp-bind"
 
-func (c *C2SConn) bind(local string, cursor *xml.Cursor) {
+func (s *C2SStream) bind(local string, cursor *xml.Cursor) {
 	id := cursor.MustAttr("id")
 
 	cursor.MustToChild()
@@ -23,12 +23,12 @@ func (c *C2SConn) bind(local string, cursor *xml.Cursor) {
 
 	// TODO think about rpc or stream for such communication
 	if sm.BindResource(local, resource) {
-		c2s.Add(local, resource, c)
+		c2s.Add(local, resource, s)
 		println("c2s, bind", local, resource)
 
 		jid := local + "@" + serverName + "/" + resource
-		c.jid = makeJid(jid)
-		c.StartElement("iq", "id", id, "type", "result").
+		s.jid = makeJid(jid)
+		s.StartElement("iq", "id", id, "type", "result").
 			StartElement("bind", "xmlns", bindNs).
 				Element("jid", jid).
 			End()

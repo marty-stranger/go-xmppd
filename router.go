@@ -13,25 +13,18 @@ var router = &Router{
 
 func (r *Router) run() {
 	for packet := range r.ch {
-		fmt.Println("router: packet =", packet)
+		fmt.Println("router", packet)
 
-		println("d =", packet.Dest.Full)
-		if packet.Dest.Full == serverName {
-			local.ch <- packet
-			continue
-		}
-
-		// from c2s
-		if packet.Src.Domain == serverName && packet.Src.Resource != "" {
-			sm.ch <- packet
-			continue
-		}
-
-		if packet.Dest.Domain == serverName {
-			if packet.Dest.Resource == "" {
-				sm.ch <- packet
+		dest := packet.Dest
+		if dest.Domain == serverName {
+			if dest.Local != "" {
+				if dest.Resource != "" {
+					c2s.ch <- packet
+				} else {
+					sm.ch <- packet
+				}
 			} else {
-				c2s.ch <- packet
+				local.ch <- packet
 			}
 		} else {
 			s2s.ch <- packet

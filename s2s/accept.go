@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (s *S2SConn) accept() {
+func (s *S2SStream) accept() {
 	cursor := s.ReadStartElement().Cursor()
 
 	from, _ := cursor.Attr("from")
@@ -28,5 +28,20 @@ func (s *S2SConn) accept() {
 		Send()
 
 	s.dialbackAccept()
+
+	for {
+		cursor := s.ReadElement().Cursor()
+
+		if cursor.Name() == "db:result" {
+			continue
+		}
+
+		stanza := newStanza(cursor.Fragment)
+
+		packet := &Packet{}
+		packet.Dest = stanza.To
+		packet.Stanza = stanza
+		router.ch <- packet
+	}
 }
 

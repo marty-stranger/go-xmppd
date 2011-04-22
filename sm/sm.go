@@ -11,14 +11,28 @@ func init() {
 type SM struct {
 	ch		chan *Packet
 	id		int
-	connected	map[string]map[string]bool
-	available	map[string]map[string]bool
+	connected	UsersResources
+	available	UsersResources
+	interested	UsersResources
+}
+
+type UsersResources map[string]map[string]bool
+
+func (ur UsersResources) Add(user, resource string) {
+	resources := ur[user]
+	if resources == nil {
+		resources = make(map[string]bool)
+		ur[user] = resources
+	}
+
+	resources[resource] = true
 }
 
 var sm = SM{
 	ch:		make(chan *Packet),
-	connected:	make(map[string]map[string]bool),
-	available:	make(map[string]map[string]bool)}
+	connected:	make(UsersResources),
+	available:	make(UsersResources),
+	interested:	make(UsersResources)}
 
 func (m *SM) run() {
 	for packet := range m.ch {

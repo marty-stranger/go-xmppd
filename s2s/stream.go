@@ -5,19 +5,6 @@ import (
 	"net"
 )
 
-func runS2S() {
-	l, e := net.Listen("tcp", "0.0.0.0:5269")
-	if e != nil { panic(e) }
-
-	for {
-		c, e := l.Accept()
-		if e != nil { panic(e) }
-
-		s := &S2SConn{Conn: newConn(c)}
-		go s.accept()
-	}
-}
-
 func address(domain string) string {
 	_, addrs, err := net.LookupSRV("xmpp-server", "tcp", domain)
 
@@ -32,8 +19,8 @@ func address(domain string) string {
 
 type FromTo struct { From, To string }
 
-type S2SConn struct {
-	*Conn
+type S2SStream struct {
+	*Stream
 
 	streamTo	string
 	streamId	string
@@ -42,56 +29,53 @@ type S2SConn struct {
 	verified	bool
 }
 
-func newS2SConn(to string) *S2SConn {
-	return &S2SConn{
+func newS2SStream(to string) *S2SStream {
+	return &S2SStream{
 		streamTo: to}
 //		verified: make(map[FromTo]bool)}
 }
 
-func (c *S2SConn) connect() {
-	addr := address(c.streamTo)
+func (s *S2SStream) connect() {
+	addr := address(s.streamTo)
 
 	conn, err := net.Dial("tcp", "", addr)
 	if err != nil { panic(err) } // TODO handle error
 
-	c.Conn = newConn(conn)
+	s.Stream = newStream(conn)
 
 	// NOTE xmlns:db is required for gmail.com, invalid-namespace otherwise
 	version := "1.0"
-	c.StartElement("stream:stream",
+	s.StartElement("stream:stream",
 			"from", serverName,
-			"to", c.streamTo,
+			"to", s.streamTo,
 			"version", version,
 			"xmlns", "jabber:server",
 			"xmlns:stream", streamNs,
 			"xmlns:db", "jabber:server:dialback").
 		Send()
 
-	cursor := c.ReadStartElement().Cursor()
+	cursor := s.ReadStartElement().Cursor()
 
-	c.streamId = cursor.MustAttr("id")
+	s.streamId = cursor.MustAttr("id")
 
 	version, _ = cursor.Attr("version")
 	if version == "" {
-		c.dialback()
+		s.dialback()
 	}
 
 }
 
-func (c *S2SConn) sendStanza(stanza *Stanza) {
-	if c.verified {
-		c.StartElement(stanza.Name, "from", stanza.From.Full, "id", stanza.Id,
-				"to", stanza.To.Full, "type", stanza.Type).
-			Raw(stanza.Fragment.String()).
-			End()
+func (s *S2SStream) WriteStanza(stanza *Stanza) {
+	if s.verified {
+		s.Stream.WriteStanza(stanza)
 	} else {
-		c.pending = append(c.pending, stanza)
+		s.pending = append(s.pending, stanza)
 	}
 }
 
-func (c *S2SConn) sendPending() {
-	for _, stanza := range c.pending {
-		c.sendStanza(stanza)
+func (s *S2SStream) sendPending() {
+	for _, stanza := range s.pending {
+		s.WriteStanza(stanza)
 	}
-	c.pending = nil
+	s.pending = nil
 }

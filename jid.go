@@ -41,3 +41,7 @@ func (j Jid) BareJid() Jid {
 		Domain: j.Domain,
 		Resource: ""}
 }
+
+func (j Jid) LocalResource() (string, string) {
+	return j.Local, j.Resource
+}

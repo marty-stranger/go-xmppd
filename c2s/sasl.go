@@ -9,8 +9,8 @@ import (
 
 const saslNs = "urn:ietf:params:xml:ns:xmpp-sasl"
 
-func (c *C2SConn) saslError(error string) {
-	c.StartElement("failure", saslNs).
+func (s *C2SStream) saslError(error string) {
+	s.StartElement("failure", saslNs).
 		Element(error).End()
 	panic("sasl error")
 	// TODO what now ? panic ?
@@ -28,18 +28,18 @@ func decode64(s string) string {
 	return string(decoded)
 }
 
-func (c *C2SConn) sasl(cursor *xml.Cursor) string {
+func (s *C2SStream) sasl(cursor *xml.Cursor) string {
 	mech := cursor.MustAttr("mechanism")
-	if mech != "PLAIN" { c.saslError("invalid-mechanism") }
+	if mech != "PLAIN" { s.saslError("invalid-mechanism") }
 
 	auth := strings.Split(decode64(cursor.MustChars()), "\x00", -1)
 	_, authcid, password := auth[0], auth[1], auth[2] // _ -> authzid
 
 	username := authcid // TODO nodeprep
 	if authenticate(username, password) {
-		c.Element("success", "xmlns", saslNs).End()
+		s.Element("success", "xmlns", saslNs).End()
 	} else {
-		c.saslError("not-authorized")
+		s.saslError("not-authorized")
 	}
 
 	return username

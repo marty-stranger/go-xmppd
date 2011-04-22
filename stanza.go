@@ -14,6 +14,7 @@ type Stanza struct {
 }
 
 func newStanza(fragment *xml.Fragment) *Stanza {
+	println("newStanza", fragment.String())
 	cursor := fragment.Cursor()
 
 	stanza := Stanza{}

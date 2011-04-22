@@ -23,12 +23,12 @@ func dialbackKey(from, to, id string) string {
 	return fmt.Sprintf("%x", hash.Sum())
 }
 
-func (c *S2SConn) dialback() {
-	key := dialbackKey(serverName, c.streamTo, c.streamId)
+func (s *S2SStream) dialback() {
+	key := dialbackKey(serverName, s.streamTo, s.streamId)
 
-	c.Element("db:result", "from", serverName, "to", c.streamTo, key).End()
+	s.Element("db:result", "from", serverName, "to", s.streamTo, key).End()
 
-	cursor := c.ReadElement().Cursor()
+	cursor := s.ReadElement().Cursor()
 	// should be db:result
 
 	resultType := cursor.MustAttr("type")
@@ -41,24 +41,24 @@ func (c *S2SConn) dialback() {
 
 	c.ReadElement() */
 
-	c.verified = true
-	c.sendPending()
+	s.verified = true
+	s.sendPending()
 }
 
-func (c *S2SConn) dialbackAccept() {
+func (s *S2SStream) dialbackAccept() {
 	// should be db result
-	cursor := c.ReadElement().Cursor()
+	cursor := s.ReadElement().Cursor()
 
 	from := cursor.MustAttr("from")
 	to := cursor.MustAttr("to")
 
 	// TODO verify @to, check hash
 	if true {
-		c.Element("db:result", "from", to, "to", from, "type", "valid").End()
+		s.Element("db:result", "from", to, "to", from, "type", "valid").End()
 	}
 
 	// should be db verify
-	cursor = c.ReadElement().Cursor()
+	cursor = s.ReadElement().Cursor()
 
 	from = cursor.MustAttr("from")
 	to = cursor.MustAttr("to")
@@ -73,5 +73,5 @@ func (c *S2SConn) dialbackAccept() {
 		verifyType = "invalid"
 	}
 
-	c.Element("db:verify", "from", to, "id", id, "to", from, "type", verifyType).End()
+	s.Element("db:verify", "from", to, "id", id, "to", from, "type", verifyType).End()
 }

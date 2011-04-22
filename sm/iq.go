@@ -22,10 +22,13 @@ func (m *SM) bareIQ(packet *Packet) {
 }
 
 func (m *SM) iq(packet *Packet) {
-	if packet.To.Resource == "" {
-		m.bareIQ(packet)
+	if packet.Type == "result" {
 	} else {
-		// m.iqFullTo()
+		if packet.To.Resource == "" {
+			m.bareIQ(packet)
+		} else {
+			// m.iqFullTo()
+		}
 	}
 }
 
