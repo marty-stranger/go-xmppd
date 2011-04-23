@@ -1,31 +1,27 @@
 package main
 
 import (
-	"fmt"
-
 	"g/xml"
 )
 
 const rosterNs = "jabber:iq:roster"
 
-func (m *SM) rosterIQ(packet *Packet) {
-	switch packet.Type {
+func (p SMPacket) rosterIQ() {
+	switch p.Type {
 	case "get":
-		m.interested.Add(packet.Src.LocalResource())
-		fmt.Println("m.interested = ", m.interested)
+		sm.GetSession(p.Src.LocalResource()).Interested = true
 
 		builder := xml.NewBuilder().
 			StartElement("query", "xmlns", rosterNs)
-		db.WriteRoster(packet.Src.Local, builder)
+		db.WriteRoster(p.Src.Local, builder)
 		fragment := builder.End()
 
-		packet.Swap()
-		packet.Type = "result"
-		packet.Fragment = fragment
-		router.ch <- packet
+		p.Swap()
+		p.Type = "result"
+		p.Fragment = fragment
+		router.ch <- p.Packet
 	case "set":
-		println("roster-set")
-		cursor := packet.Cursor()
+		cursor := p.Cursor()
 		cursor.MustToChild()
 
 		jid := cursor.MustAttr("jid") // TODO prepare jid ?
@@ -34,7 +30,7 @@ func (m *SM) rosterIQ(packet *Packet) {
 		builder := xml.NewBuilder().
 			Element("query", "xmlns", rosterNs)
 
-		user := packet.Src.Local
+		user := p.Src.Local
 		if subscr == "remove" {
 			// TODO if no key return item-not-found
 			db.DeleteRosterItem(user, jid)
@@ -42,30 +38,23 @@ func (m *SM) rosterIQ(packet *Packet) {
 		} else {
 			item := db.GetRosterItem(user, jid)
 
-			cursor = packet.Cursor()
+			cursor = p.Cursor()
 			item.UpdateFromFragment(cursor.ChildrenSlice())
 			item.WriteToBuilder(builder)
 		}
 
-		if m.interested[user] != nil {
-			for resource, _ := range m.interested[user] {
-				stanza := &Stanza{
-					Name: "iq",
-					To: makeJid(user + "@" + serverName + "/" + resource),
-					Id: m.nextId(),
-					Type: "set"}
-				stanza.Fragment = builder.End()
+		fragment := builder.End()
 
-				packet := &Packet{}
-				packet.Dest = stanza.To
-				packet.Stanza = stanza
-				router.ch <- packet
-			}
+		for _, session := range sm.Sessions[user] {
+			if !session.Interested { continue }
+			stanza := &Stanza{Name: "iq", Id: sm.nextId(), Type: "set", Fragment: fragment}
+			packet := &Packet{Dest: session.Jid, Stanza: stanza}
+			router.ch <- packet
 		}
 
-		packet.Swap()
-		packet.Type = "result"
-		packet.Fragment = xml.NewBuilder().End()
-		router.ch <- packet
+		p.Swap()
+		p.Type = "result"
+		p.Fragment = xml.NewBuilder().End()
+		router.ch <- p.Packet
 	}
 }

@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+
+	"g/xml"
 )
 
 func init() {
@@ -9,36 +11,49 @@ func init() {
 }
 
 type SM struct {
-	ch		chan *Packet
+	Ch		chan *Packet
+	Sessions	map[string]map[string]*Session
+
 	id		int
-	connected	UsersResources
-	available	UsersResources
-	interested	UsersResources
 }
 
-type UsersResources map[string]map[string]bool
+type Session struct {
+	Jid		Jid
+	Interested	bool
+	Available	bool
+	Presence	*xml.Fragment
+}
 
-func (ur UsersResources) Add(user, resource string) {
-	resources := ur[user]
-	if resources == nil {
-		resources = make(map[string]bool)
-		ur[user] = resources
+type SMPacket struct {
+	*Packet
+}
+
+func (sm *SM) GetSession(user, resource string) *Session {
+	if sessions := sm.Sessions[user]; sessions != nil {
+		return sessions[resource]
 	}
 
-	resources[resource] = true
+	return nil
+}
+
+func (sm *SM) HasAvailable(user string) bool {
+	for _, session := range sm.Sessions[user] {
+		if session.Available { return true }
+	}
+
+	return false
 }
 
 var sm = SM{
-	ch:		make(chan *Packet),
-	connected:	make(UsersResources),
-	available:	make(UsersResources),
-	interested:	make(UsersResources)}
+	Ch:		make(chan *Packet),
+	Sessions:	make(map[string]map[string]*Session)}
 
 func (m *SM) run() {
-	for packet := range m.ch {
+	for packet := range m.Ch {
+		smPacket := SMPacket{packet}
 		switch packet.Name {
-		case "iq": m.iq(packet)
-		case "presence": m.presence(packet)
+		case "iq": smPacket.iq()
+		case "presence": smPacket.presence()
 		// case "message": m.message(packet)
 		}
 	}
@@ -49,19 +64,20 @@ func (m *SM) nextId() string {
 	return fmt.Sprint(m.id)
 }
 
-func (m *SM) BindResource(local, resource string) bool {
-	resources := m.connected[local]
-	if resources == nil {
-		resources = make(map[string]bool)
-		m.connected[local] = resources
+func (m *SM) BindResource(user, resource string) bool {
+	sessions := m.Sessions[user]
+	if sessions == nil {
+		sessions = make(map[string]*Session)
+		m.Sessions[user] = sessions
 	}
 
-	if resources[resource] {
+	if sessions[resource] != nil {
 		return false
 	}
 
-	resources[resource] = true
+	sessions[resource] = &Session{
+		Jid: makeJid(user + "@" + serverName + "/" + resource)}
+
 	return true
 
 }
-

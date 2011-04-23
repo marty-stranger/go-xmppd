@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
+	debugln("started")
 	for {
 		switch (<-signal.Incoming).(signal.UnixSignal) {
 		case signal.SIGINT:

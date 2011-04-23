@@ -11,7 +11,7 @@ type Packet struct {
 }
 
 func (p *Packet) String() string {
-	return fmt.Sprintf("%s %s %s", p.Src.Full, p.Dest.Full, p.Stanza)
+	return fmt.Sprintf("Src:%s Dest:%s %s", p.Src.Full, p.Dest.Full, p.Stanza)
 }
 
 func (p *Packet) Swap() {

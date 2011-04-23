@@ -10,7 +10,6 @@ type Jid struct {
 
 func makeJid(s string) Jid {
 	// TODO nodeprep
-	println("makeJid: s =", s)
 
 	j := Jid{}
 
@@ -44,4 +43,8 @@ func (j Jid) BareJid() Jid {
 
 func (j Jid) LocalResource() (string, string) {
 	return j.Local, j.Resource
+}
+
+func (j Jid) String() string {
+	return j.Full
 }

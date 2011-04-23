@@ -4,28 +4,29 @@ import (
 	"g/xml"
 )
 
-func (m *SM) bareIQ(packet *Packet) {
-	cursor := packet.Fragment.Cursor()
+func (p SMPacket) bareIQ() {
+	debugln("")
+	cursor := p.Cursor()
 
 	switch cursor.MustAttr("xmlns") {
 	// case discoInfoNs: m.discoInfoIQ()
-	case rosterNs:	m.rosterIQ(packet)
+	case rosterNs: p.rosterIQ()
 	default:
-		packet.Swap()
-		packet.Type = "error"
-		packet.Fragment = xml.NewBuilder().
+		p.Swap()
+		p.Type = "error"
+		p.Fragment = xml.NewBuilder().
 			StartElement("error", "type", "cancel").
 				Element("service-unavailable", "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas").
 			End()
-		router.ch <- packet
+		router.ch <- p.Packet
 	}
 }
 
-func (m *SM) iq(packet *Packet) {
-	if packet.Type == "result" {
+func (p SMPacket) iq() {
+	if p.Type == "result" {
 	} else {
-		if packet.To.Resource == "" {
-			m.bareIQ(packet)
+		if p.To.Resource == "" {
+			p.bareIQ()
 		} else {
 			// m.iqFullTo()
 		}

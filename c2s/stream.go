@@ -2,12 +2,6 @@ package main
 
 type C2SStream struct {
 	*Stream
-
-	jid	Jid
-
-	connected	bool	// NOTE move them in flags?
-	interested	bool
-	available	bool
 }
 
 func (s *C2SStream) stream() {
@@ -59,21 +53,21 @@ func (s *C2SStream) run() {
 		stanza := newStanza(s.ReadElement())
 
 		packet := &Packet{}
-		packet.Src = s.jid
+		packet.Src = s.To
 
 		switch stanza.Name {
 		case "iq":
 			if stanza.To.Full == "" {
-				packet.Dest = s.jid.BareJid()
+				packet.Dest = s.To.BareJid()
 			} else {
 				packet.Dest = stanza.To
 			}
 		case "presence":
-			packet.Dest = s.jid.BareJid()
+			packet.Dest = s.To.BareJid()
 		case "message":
 			packet.Dest = stanza.To
 
-			stanza.From = s.jid
+			stanza.From = s.To
 		}
 
 		/* if stanza.To.Full != "" {

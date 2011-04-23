@@ -24,9 +24,9 @@ func dialbackKey(from, to, id string) string {
 }
 
 func (s *S2SStream) dialback() {
-	key := dialbackKey(serverName, s.streamTo, s.streamId)
+	key := dialbackKey(serverName, s.To.Full, s.streamId)
 
-	s.Element("db:result", "from", serverName, "to", s.streamTo, key).End()
+	s.Element("db:result", "from", serverName, "to", s.To.Full, key).End()
 
 	cursor := s.ReadElement().Cursor()
 	// should be db:result

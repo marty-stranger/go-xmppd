@@ -1,20 +1,18 @@
 package main
 
 import (
-	"fmt"
-
 	"g/xml"
 )
 
 const discoInfoNs = "http://jabber.org/protocol/disco#info"
 
 type Local struct {
-	ch	chan *Packet
+	Ch	chan *Packet
 }
 
 func (m *Local) run() {
-	for packet := range m.ch {
-		fmt.Println("Local#run: packet =", packet)
+	for packet := range m.Ch {
+		debugln(packet)
 		switch packet.Name {
 		case "iq":
 			m.iq(packet)
@@ -35,7 +33,7 @@ func (m *Local) iq(packet *Packet) {
 }
 
 var local = &Local{
-	ch:	make(chan *Packet)}
+	Ch:	make(chan *Packet)}
 
 func init() {
 	go local.run()

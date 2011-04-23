@@ -27,7 +27,7 @@ func (s *C2SStream) bind(local string, cursor *xml.Cursor) {
 		println("c2s, bind", local, resource)
 
 		jid := local + "@" + serverName + "/" + resource
-		s.jid = makeJid(jid)
+		s.To = makeJid(jid)
 		s.StartElement("iq", "id", id, "type", "result").
 			StartElement("bind", "xmlns", bindNs).
 				Element("jid", jid).

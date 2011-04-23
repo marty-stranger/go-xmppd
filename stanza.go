@@ -14,7 +14,6 @@ type Stanza struct {
 }
 
 func newStanza(fragment *xml.Fragment) *Stanza {
-	println("newStanza", fragment.String())
 	cursor := fragment.Cursor()
 
 	stanza := Stanza{}
@@ -34,5 +33,5 @@ func newStanza(fragment *xml.Fragment) *Stanza {
 }
 
 func (s *Stanza) String() string {
-	return fmt.Sprintf("%s %s %s %s %s %s", s.Name, s.From.Full, s.Id, s.To.Full, s.Type, s.Fragment)
+	return fmt.Sprintf("Name:%s From:%s Id:%s To:%s Type:%s %s", s.Name, s.From.Full, s.Id, s.To.Full, s.Type, s.Fragment)
 }

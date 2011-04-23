@@ -1,28 +1,27 @@
 package main
 
 import (
-	"fmt"
 	"net"
 )
 
 type S2S struct {
-	ch	chan *Packet
+	Ch	chan *Packet
 	streams	map[string]*S2SStream
 }
 
 var s2s = &S2S{
-	ch	:	make(chan *Packet),
+	Ch:		make(chan *Packet),
 	streams:	make(map[string]*S2SStream)}
 
 func (m *S2S) run() {
-	for packet := range m.ch {
-		fmt.Println("s2s", packet)
+	for packet := range m.Ch {
+		debugln(packet)
 		domain := packet.To.Domain
 
 		stream := m.streams[domain]
 		if stream == nil {
-			stream = newS2SStream(domain)
-			go stream.connect()
+			stream = newS2SStream()
+			go stream.connect(domain)
 			m.streams[domain] = stream
 		}
 

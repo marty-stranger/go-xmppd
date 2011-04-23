@@ -2,23 +2,22 @@ package main
 
 import (
 	"net"
-	"fmt"
 	"sync"
 )
 
 type C2S struct {
-	ch	chan *Packet
+	Ch	chan *Packet
 	streams	map[string]*C2SStream
 	sync.RWMutex
 }
 
 var c2s = &C2S{
-	ch:		make(chan *Packet),
+	Ch:		make(chan *Packet),
 	streams:	make(map[string]*C2SStream)}
 
 func (m *C2S) run() {
-	for packet := range m.ch {
-		fmt.Println("C2S#run", packet)
+	for packet := range m.Ch {
+		debugln(packet)
 
 		stream := m.streams[packet.Dest.Local + "/" + packet.Dest.Resource]
 		if stream != nil {

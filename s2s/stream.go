@@ -22,32 +22,30 @@ type FromTo struct { From, To string }
 type S2SStream struct {
 	*Stream
 
-	streamTo	string
 	streamId	string
 	pending		[]*Stanza
 	// verified	map[FromTo]bool
 	verified	bool
 }
 
-func newS2SStream(to string) *S2SStream {
-	return &S2SStream{
-		streamTo: to}
-//		verified: make(map[FromTo]bool)}
+func newS2SStream() *S2SStream {
+	return &S2SStream{}
 }
 
-func (s *S2SStream) connect() {
-	addr := address(s.streamTo)
+func (s *S2SStream) connect(to string) {
+	addr := address(to)
 
 	conn, err := net.Dial("tcp", "", addr)
 	if err != nil { panic(err) } // TODO handle error
 
 	s.Stream = newStream(conn)
+	s.To = makeJid(to)
 
 	// NOTE xmlns:db is required for gmail.com, invalid-namespace otherwise
 	version := "1.0"
 	s.StartElement("stream:stream",
 			"from", serverName,
-			"to", s.streamTo,
+			"to", s.To.Full,
 			"version", version,
 			"xmlns", "jabber:server",
 			"xmlns:stream", streamNs,
