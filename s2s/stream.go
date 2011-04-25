@@ -13,7 +13,7 @@ func address(domain string) string {
 	}
 
 	// TODO choose one from addrs
-	addr := addrs[0]
+	addr := addrs[len(addrs) - 1]
 	return fmt.Sprint(addr.Target, ":", addr.Port)
 }
 
@@ -33,10 +33,13 @@ func newS2SStream() *S2SStream {
 }
 
 func (s *S2SStream) connect(to string) {
+	// TODO add logic that goes over address if first in srv fails
 	addr := address(to)
-
+	debugln(to, "addr =", addr)
 	conn, err := net.Dial("tcp", "", addr)
 	if err != nil { panic(err) } // TODO handle error
+
+	debugln("dialed")
 
 	s.Stream = newStream(conn)
 	s.To = makeJid(to)

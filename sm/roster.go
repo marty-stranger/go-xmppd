@@ -7,8 +7,9 @@ import (
 const rosterNs = "jabber:iq:roster"
 
 func (p SMPacket) rosterIQ() {
+	debugln("")
 	switch p.Type {
-	case "get":
+	case GetType:
 		sm.GetSession(p.Src.LocalResource()).Interested = true
 
 		builder := xml.NewBuilder().
@@ -17,10 +18,11 @@ func (p SMPacket) rosterIQ() {
 		fragment := builder.End()
 
 		p.Swap()
-		p.Type = "result"
+		p.Type = ResultType
 		p.Fragment = fragment
-		router.ch <- p.Packet
-	case "set":
+		router.Ch <- p.Packet
+	case SetType:
+		debugln("")
 		cursor := p.Cursor()
 		cursor.MustToChild()
 
@@ -47,14 +49,14 @@ func (p SMPacket) rosterIQ() {
 
 		for _, session := range sm.Sessions[user] {
 			if !session.Interested { continue }
-			stanza := &Stanza{Name: "iq", Id: sm.nextId(), Type: "set", Fragment: fragment}
+			stanza := &Stanza{Kind: IQKind, Id: sm.nextId(), Type: SetType, Fragment: fragment}
 			packet := &Packet{Dest: session.Jid, Stanza: stanza}
-			router.ch <- packet
+			router.Ch <- packet
 		}
 
 		p.Swap()
-		p.Type = "result"
+		p.Type = ResultType
 		p.Fragment = xml.NewBuilder().End()
-		router.ch <- p.Packet
+		router.Ch <- p.Packet
 	}
 }

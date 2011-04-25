@@ -50,10 +50,11 @@ var sm = SM{
 
 func (m *SM) run() {
 	for packet := range m.Ch {
+		debugln(packet)
 		smPacket := SMPacket{packet}
-		switch packet.Name {
-		case "iq": smPacket.iq()
-		case "presence": smPacket.presence()
+		switch packet.Kind {
+		case IQKind: smPacket.iq()
+		case PresenceKind: smPacket.presence()
 		// case "message": m.message(packet)
 		}
 	}

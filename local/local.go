@@ -13,27 +13,41 @@ type Local struct {
 func (m *Local) run() {
 	for packet := range m.Ch {
 		debugln(packet)
-		switch packet.Name {
-		case "iq":
+		switch packet.Kind {
+		case IQKind:
 			m.iq(packet)
 		}
 	}
 }
 
 func (m *Local) iq(packet *Packet) {
-	if packet.Type == "get" {
-		fragment := xml.NewBuilder().
-			Element("query", "xmlns", discoInfoNs).
-			End()
+	cursor := packet.Cursor()
+	xmlns := cursor.MustAttr("xmlns")
+	switch xmlns {
+	case discoInfoNs:
+		if packet.Type == GetType {
+			fragment := xml.NewBuilder().
+				Element("query", "xmlns", discoInfoNs).
+				End()
+			packet.Swap()
+			packet.Type = ResultType
+			packet.Fragment = fragment
+			router.Ch <- packet
+		}
+	default:
 		packet.Swap()
-		packet.Type = "result"
-		packet.Fragment = fragment
-		router.ch <- packet
+		packet.Type = ErrorType
+		packet.Fragment = xml.NewBuilder().
+			StartElement("error", "type", "cancel").
+				Element("service-unavailable", "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas").
+			End()
+		router.Ch <- packet
 	}
 }
 
 var local = &Local{
-	Ch:	make(chan *Packet)}
+	Ch:	make(chan *Packet),
+}
 
 func init() {
 	go local.run()

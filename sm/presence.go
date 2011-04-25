@@ -5,21 +5,21 @@ import (
 )
 
 func (p SMPacket) presence() {
-	if p.Src.Resource != "" {
+	if p.Src.Domain == serverName && p.Src.Resource != "" {
 		switch p.Type {
-		case "":
+		case NoneType:
 			if p.To.Full == "" {
 				p.broadcastPresence()
 			}
-		case "subscribe": p.subscribePresenceOut()
-		case "subscribed": p.subscribedPresenceOut()
+		case SubscribeType: p.subscribePresenceOut()
+		case SubscribedType: p.subscribedPresenceOut()
 		}
 	} else {
 		switch p.Type {
-		case "":
+		case NoneType:
 			p.directPresenceIn()
-		case "subscribe": p.subscribePresenceIn()
-		case "subscribed": p.subscribedPresenceIn()
+		case SubscribeType: p.subscribePresenceIn()
+		case SubscribedType: p.subscribedPresenceIn()
 		}
 	}
 }
@@ -29,22 +29,37 @@ func (p SMPacket) broadcastPresence() {
 	session.Available = true
 	session.Presence = p.Stanza.Fragment // make hard copy? or pre-fragment and after- hang
 
-	/* for _, item := range db.RosterItemsFrom(packet.From.Local) {
+	for _, jid := range db.SubStatesInYes(p.From.Local) {
 		stanza := &Stanza{
-			Name: "presence",
-			From: m.From,
-			To: makeJid(item.Jid)}
-		stanza.Fragment = m.Stanza.Fragment
-		m.route(stanza)
-	} */
+			Kind: PresenceKind,
+			From: p.Src,
+			To: makeJid(jid), // NOTE no prepare is needed
+			Fragment: session.Presence,
+		}
+
+		router.Ch <- &Packet{Src: p.Src.BareJid(), Dest: stanza.To, Stanza: stanza}
+	}
 
 	// TODO make it clearly
 	p.From = p.Src
 	p.Src = p.Src.BareJid()
 	p.To = p.Src
-	router.ch <- p.Packet
+	router.Ch <- p.Packet
 
-	// TODO send presence probes
+	// TODO send presence probes, TODO send only to contact with do not know about
+	// TODO how about contact resides with server ?
+	for _, jid := range db.SubStatesOutYes(p.From.Local) {
+		stanza := &Stanza{
+			Kind: PresenceKind,
+			From: p.Src.BareJid(),
+			Id: sm.nextId(),
+			To: makeJid(jid), // NOTE no prepare is needed
+			Type: ProbeType,
+			Fragment: xml.NewBuilder().End(),
+		}
+
+		router.Ch <- &Packet{Src: p.Src.BareJid(), Dest: stanza.To, Stanza: stanza}
+	}
 }
 
 func (p SMPacket) directPresenceIn() {
@@ -53,19 +68,23 @@ func (p SMPacket) directPresenceIn() {
 
 	for _, session := range sm.Sessions[user] {
 		if !session.Available { continue }
-		router.ch <- &Packet{Dest: session.Jid, Stanza: p.Stanza}
+		router.Ch <- &Packet{Dest: session.Jid, Stanza: p.Stanza}
 	}
 }
 
 func (p SMPacket) subscribePresenceOut() {
-	state := db.GetSubState(p.To.Local, p.From.Bare)
+	debugln("")
+	user, contact := p.From.Local, p.To.Bare
+	state := db.GetSubState(user, contact)
+	debugln(state)
 	if state.IsOutNo() {
+		debugln("")
 		state.SetOutPending()
-		sm.pushRoster(p.To.Local, p.From.Bare)
+		sm.pushRoster(user, contact)
 	}
 
-	p.Src = p.Src.BareJid()
-	router.ch <- p.Packet
+	p.Dest = p.To
+	router.Ch <- p.Packet
 }
 
 func (p SMPacket) subscribePresenceIn() {
@@ -77,16 +96,16 @@ func (p SMPacket) subscribePresenceIn() {
 		if sm.HasAvailable(user) {
 			for _, session := range sm.Sessions[user] {
 				if !session.Available { continue }
-				router.ch <- &Packet{Dest: session.Jid, Stanza: p.Stanza}
+				router.Ch <- &Packet{Dest: session.Jid, Stanza: p.Stanza}
 			}
 		} else {
 			// TODO store presence
 		}
 	} else if state.IsInYes() {
 		p.Swap()
-		p.Type = "subscribed"
+		p.Type = SubscribedType
 		p.Fragment = xml.NewBuilder().End()
-		router.ch <- p.Packet
+		router.Ch <- p.Packet
 	}
 }
 
@@ -97,21 +116,21 @@ func (p *SMPacket) subscribedPresenceOut() {
 	if state.IsInPending() {
 		state.SetInYes()
 
-		router.ch <- &Packet{Src: p.Src.BareJid(), Dest: p.To, Stanza: p.Stanza}
+		router.Ch <- &Packet{Src: p.Src.BareJid(), Dest: p.To, Stanza: p.Stanza}
 
 		sm.pushRoster(user, contact)
 
 		for _, session := range sm.Sessions[user] {
 			if !session.Available { continue }
 			// Id ? it is in rfc 6121
-			stanza := &Stanza{Name: "presence", From: session.Jid, To: p.To, Fragment: session.Presence}
-			router.ch <- &Packet{Src: session.Jid.BareJid(), Dest: p.To, Stanza: stanza}
+			stanza := &Stanza{Kind: PresenceKind, From: session.Jid, To: p.To, Fragment: session.Presence}
+			router.Ch <- &Packet{Src: session.Jid.BareJid(), Dest: p.To, Stanza: stanza}
 		}
 	}
 }
 
 func (p *SMPacket) subscribedPresenceIn() {
-	user, contact := p.From.Local, p.To.Bare
+	user, contact := p.To.Local, p.From.Bare
 
 	state := db.GetSubState(user, contact)
 	if state.IsOutPending() {
@@ -119,7 +138,7 @@ func (p *SMPacket) subscribedPresenceIn() {
 
 		for _, session := range sm.Sessions[user] {
 			if !session.Interested { continue }
-			router.ch <- &Packet{Dest: session.Jid, Stanza: p.Stanza}
+			router.Ch <- &Packet{Dest: session.Jid, Stanza: p.Stanza}
 		}
 
 		sm.pushRoster(user, contact)
@@ -135,7 +154,7 @@ func (sm *SM) pushRoster(user, contact string) {
 
 	for _, session := range sm.Sessions[user] {
 		if !session.Interested { continue }
-		stanza := &Stanza{Name: "iq", Type: "set", Fragment: fragment}
-		router.ch <- &Packet{Dest: session.Jid, Stanza: stanza}
+		stanza := &Stanza{Kind: IQKind, Type: SetType, Fragment: fragment}
+		router.Ch <- &Packet{Dest: session.Jid, Stanza: stanza}
 	}
 }

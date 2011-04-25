@@ -10,8 +10,10 @@ func (d *Db) WriteRoster(user string, builder *xml.Builder) {
 	substates := make(map[string]SubState)
 	for i := 0; i < len(substatesValues); i += 2 {
 		jid := string(substatesValues[i])
+		debugln("jid =", jid)
 		substate := substatesValues[i + 1][0]
 		substates[jid] = SubState(substate)
+		debugln("substate =", SubState(substate))
 	}
 
 	itemsValues := d.Hgetall("roster.items:" + user)
@@ -20,7 +22,9 @@ func (d *Db) WriteRoster(user string, builder *xml.Builder) {
 	println("len(itemsValues) =", len(itemsValues))
 	for i := 0; i < len(itemsValues); i += 2 {
 		jid := string(itemsValues[i])
+		debugln("jid =", jid)
 		name := string(itemsValues[i + 1])
+		debugln("name =", name)
 
 		substate := substates[jid]
 		subscription, ask := substate.SubscriptionAsk()

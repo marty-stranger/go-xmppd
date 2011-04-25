@@ -1,14 +1,16 @@
 package main
 
 type Router struct {
-	ch	chan *Packet
+	Ch	chan *Packet
 }
 
+// NOTE does 1000 chan length eliminate deadlock problem ?
 var router = &Router{
-	ch:	make(chan *Packet)}
+	Ch:	make(chan *Packet, 1000),
+}
 
 func (r *Router) run() {
-	for packet := range r.ch {
+	for packet := range r.Ch {
 		debugln(packet)
 
 		dest := packet.Dest

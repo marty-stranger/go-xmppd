@@ -41,7 +41,7 @@ func (s *S2SStream) accept() {
 		packet := &Packet{}
 		packet.Dest = stanza.To
 		packet.Stanza = stanza
-		router.ch <- packet
+		router.Ch <- packet
 	}
 }
 

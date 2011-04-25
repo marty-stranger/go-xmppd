@@ -13,17 +13,17 @@ func (p SMPacket) bareIQ() {
 	case rosterNs: p.rosterIQ()
 	default:
 		p.Swap()
-		p.Type = "error"
+		p.Type = ErrorType
 		p.Fragment = xml.NewBuilder().
 			StartElement("error", "type", "cancel").
 				Element("service-unavailable", "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas").
 			End()
-		router.ch <- p.Packet
+		router.Ch <- p.Packet
 	}
 }
 
 func (p SMPacket) iq() {
-	if p.Type == "result" {
+	if p.Type == ResultType {
 	} else {
 		if p.To.Resource == "" {
 			p.bareIQ()
