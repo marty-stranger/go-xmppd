@@ -72,7 +72,7 @@ type Stanza struct {
 }
 
 func (s *Stanza) String() string {
-	return fmt.Sprintf("Name:%s From:%s Id:%s To:%s Type:%s %s",
+	return fmt.Sprintf("Kind:%s From:%s Id:%s To:%s Type:%s %s",
 		s.Kind, s.From.Full, s.Id, s.To.Full, s.Type, s.Fragment)
 }
 

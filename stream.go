@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"runtime/debug"
 
 	"g/xml"
 )
@@ -76,6 +77,7 @@ func (s *Stream) streamRecover() {
 		debugln(fmt.Sprintf("%#v", error))
 	default:
 		debugln(fmt.Sprintf("%#v", error))
+		debug.PrintStack()
 		s.writeStreamError("internal-server-error")
 		s.EndElementNoTrack("stream:stream")
 		s.Close()
