@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 // NOTE all these consts will be useless if "abcd" == "abcd" would just compare strings' pointer and length
@@ -15,14 +15,17 @@ const (
 )
 
 const (
-	ChatType = iota
-	NoneType
+	NoneType = iota
+
+	ChatType
+
+	UnavailableType
 	SubscribeType
 	SubscribedType
 	UnsubscribeType
 	UnsubscribedType
-
 	ProbeType
+
 	GetType
 	SetType
 	ResultType
@@ -44,6 +47,7 @@ var StanzaTypesStrings = [...]string{
 	ChatType: "chat",
 
 	NoneType: "",
+	UnavailableType: "",
 	SubscribeType: "subscribe",
 	SubscribedType: "subscribed",
 	UnsubscribeType: "unsubscribe",
@@ -84,6 +88,7 @@ var TypesMap = map[StanzaKind]map[string]StanzaType{
 	},
 	PresenceKind: map[string]StanzaType{
 		"": NoneType,
+		"unavailable": UnavailableType,
 		"subscribe": SubscribeType,
 		"subscribed": SubscribedType,
 		"unsubscribe": UnsubscribeType,

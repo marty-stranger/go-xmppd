@@ -1,10 +1,12 @@
 package main
 
 import (
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
-const discoInfoNs = "http://jabber.org/protocol/disco#info"
+const (
+	discoInfoNs = "http://jabber.org/protocol/disco#info"
+)
 
 type Local struct {
 	Ch	chan *Packet

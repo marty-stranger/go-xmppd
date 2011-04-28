@@ -1,7 +1,7 @@
 package main
 
 import (
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 const bindNs = "urn:ietf:params:xml:ns:xmpp-bind"

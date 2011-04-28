@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 func init() {
@@ -77,8 +77,17 @@ func (m *SM) BindResource(user, resource string) bool {
 	}
 
 	sessions[resource] = &Session{
-		Jid: makeJid(user + "@" + serverName + "/" + resource)}
+		Jid: makeJid(user + "@" + serverName + "/" + resource),
+	}
 
 	return true
+}
 
+func (m *SM) UnbindResource(user, resource string) {
+	// TODO sync
+	m.Sessions[user][resource] = nil, false
+}
+
+func (s *Session) Unavailable() {
+	s.Available = false
 }

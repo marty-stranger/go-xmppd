@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 const tlsNs = "urn:ietf:params:xml:ns:xmpp-tls"

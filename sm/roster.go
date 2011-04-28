@@ -1,7 +1,7 @@
 package main
 
 import (
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 const rosterNs = "jabber:iq:roster"

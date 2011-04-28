@@ -54,5 +54,7 @@ func (s *C2SStream) negotiate() {
 //		Element("session", "xmlns", "urn:ietf:params:xml:ns:xmpp-session").
 		End()
 
+	cursor = s.ReadElement().Cursor()
+
 	s.bind(local, cursor)
 }

@@ -8,9 +8,20 @@ type Jid struct {
 	Full, Bare, Local, Domain, Resource string
 }
 
-func makeJid(s string) Jid {
-	// TODO nodeprep
+func makeJid3(local, domain, resource string) Jid {
+	return makeJid(local + "@" + domain + "/" + resource)
+}
 
+func makeJid3Prep(local, domain, resource string) Jid {
+	return makeJidPrep(local + "@" + domain + "/" + resource)
+}
+
+func makeJidPrep(s string) Jid {
+	// TODO nodeprep
+	return makeJid(s)
+}
+
+func makeJid(s string) Jid {
 	j := Jid{}
 
 	j.Full = s

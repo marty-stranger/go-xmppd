@@ -12,6 +12,8 @@ func (s SubState) IsOutNo() bool { return s >> 2 & 3 == 0 }
 func (s SubState) IsOutYes() bool { return s >> 2 & 3 == 1 }
 func (s SubState) IsOutPending() bool { return s >> 2 & 3 == 2 }
 
+func (s SubState) PreAppr() bool { return false }
+
 var subscriptionsNames = []string{"none", "from", "to", "both"}
 
 func (s SubState) SubscriptionAsk() (subscription string, ask string) {
@@ -58,6 +60,8 @@ func (s *SubStateDbItem) SetInPending() { s.SubState &^= 1; s.SubState |= 2; s.S
 func (s *SubStateDbItem) SetOutNo() { s.SubState &^= 4; s.SubState &^= 8; s.Save() }
 func (s *SubStateDbItem) SetOutYes() { s.SubState |= 4; s.SubState &^= 8; s.Save() }
 func (s *SubStateDbItem) SetOutPending() { s.SubState &^= 4; s.SubState |= 8; s.Save() }
+
+func (s *SubStateDbItem) RemovePreAppr() {}
 
 func (s *SubStateDbItem) Save() {
 	debugln(s)

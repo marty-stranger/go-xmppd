@@ -1,7 +1,7 @@
 package main
 
 import (
-	"g/redis"
+	redis "github.com/pavelrosputko/go-redis"
 )
 
 type Db struct {

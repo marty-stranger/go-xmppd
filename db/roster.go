@@ -1,7 +1,7 @@
 package main
 
 import (
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 func (d *Db) WriteRoster(user string, builder *xml.Builder) {

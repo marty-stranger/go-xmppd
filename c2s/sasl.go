@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"g/xml"
+	"github.com/pavelrosputko/go-xml"
 )
 
 const saslNs = "urn:ietf:params:xml:ns:xmpp-sasl"
