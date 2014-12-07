@@ -33,7 +33,7 @@ func newStream(netConn net.Conn) *Stream {
 
 
 func (s *Stream) WriteStanza(stanza *Stanza) {
-	if stanza.Fragment == nil {
+	if stanza.Fragment != nil {
 		s.StartElement(stanza.Kind.String(), "from", stanza.From.Full, "id", stanza.Id,
 			"to", stanza.To.Full, "type", stanza.Type.String()).
 			Raw(stanza.Fragment.String()).
